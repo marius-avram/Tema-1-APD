@@ -1,0 +1,144 @@
+AVRAM Marius 334CB 
+Tema 1 APD - Colonistii
+
+Complexitatea teoretica a solutiei neoptimizate este O(n^5). Pentru fiecare
+colonist in parte trebuie sa analizam intreaga matrice pentru a gasi costul 
+minim al propriei resurse si costul minim al resursei complementare. Cum sunt 
+n*n colonisti in matrice si pentru fiecare colonist in parte se face o cautare 
+in n*n => o complexitate de O(n^4) pe iteratie. In cazul in care numarul de 
+iteratii este comparabil cu dimensiunile matricii(N) atunci ajungem la o 
+complexitate finala de O(n^5). 
+
+Pentru versiunea paralela neoptimzata am paralelizat primele doua foruri cu
+ajutorul clauzei collapse(2). Schedule-ul este de tip runtime astfel incat 
+acesta poate fi setat in interiorul scriptului de rulare. Pentru numararea
+cantitatilor de resurse din fiecare an, variabilele ce numara fiecare resursa in
+parte sunt introduse in clauza reduction cu operatia de adunare. Astfel
+resursele numarate in fiecare thread in parte vor fi adunate la sfarsit in
+threadul master. Pentru aflarea pretului maxim al produsului A si B in paralel
+am creat doua zone critical separate astfel incat un singur thread sa poata aiba
+acces la zona respectiva de cod. Daca un alt thread incearca sa afle maximul
+atunci threadul intra in asteptare.  
+
+Pentru versiunea seriala am obtinut urmatoarele rezultate pe cluster:
+
+N=50, iteratii=50 pentru fisierul in50_1.txt >> out50_1_500.txt
+
+real	0m42.288s
+
+N=100, iteratii=50 pentru fisierul in100_1.txt >> out100_1_50.txt
+
+real	0m55.574s
+
+Pentru versiunea paralela am obtinut urmatoarele rezultate de rulare pe cluster:
+
+N=50, iteratii=50 pentru fisierul in50_1.txt >> out50_1_500.txt 
+
+OMP_SCHEDULE="dynamic" 
+	-OMP_NUM_THREADS = 1
+	 real	0m45.519s
+	 
+	-OMP_NUM_THREADS = 2
+	 real	0m23.073s
+	 speed-up fata de versiunea seriala: 1.97
+	
+	-OMP_NUM_THREADS = 4
+	 real	0m11.630s
+	 speed-up fata de versiunea seriala: 3.91
+	 
+	-OMP_NUM_THREADS = 8
+	 real	0m5.911s
+	 speed-up fata de versiunea seriala: 7.70
+
+
+OMP_SCHEDULE="static"
+	-OMP_NUM_THREADS = 1
+	 real	0m45.431s
+
+	-OMP_NUM_THREADS = 2
+	 real	0m23.053s
+	 speed-up fata de versiunea seriala: 1.97
+	 
+	-OMP_NUM_THREADS = 4
+	 real	0m11.585s
+	 speed-up fata de versiunea seriala: 3.92
+	 
+	-OMP_NUM_THREADS = 8
+	 real	0m5.877s
+	 speed-up fata de versiunea seriala: 7.73
+
+N=100, iteratii=50 pentru fisierul in100_1.txt >> out100_1_50.txt 
+
+OMP_SCHEDULE="dynamic" 
+	-OMP_NUM_THREADS = 1
+	 real	1m0.869s
+	 
+	-OMP_NUM_THREADS = 2
+	 real	0m30.549s
+	 speed-up fata de versiunea seriala: 1.99
+	
+	-OMP_NUM_THREADS = 4
+	 real	0m15.364s
+	 speed-up fata de versiunea seriala: 3.96
+	 
+	-OMP_NUM_THREADS = 8
+	 real	0m7.750s
+	 speed-up fata de versiunea seriala: 7.85
+
+OMP_SCHEDULE="guided"
+	-OMP_NUM_THREADS = 1
+	 real	1m0.803s
+
+	-OMP_NUM_THREADS = 2
+	 real	0m30.496s
+	 speed-up fata de versiunea seriala: 1.99
+	 
+	-OMP_NUM_THREADS = 4
+	 real	0m15.275s
+	 speed-up fata de versiunea seriala: 3.98
+
+	-OMP_NUM_THREADS = 8
+	 real	0m7.751s
+	 speed-up fata de versiunea seriala: 7.84
+	
+
+
+Toate testele au fost realizate pe ibm-quad-new.q intrucat atunci cand am
+incercat rularea pe ibm-quad.q scriptul de rulare nu pornea.
+Se observa ca speed-up creste proportional o data cu numarul de threaduri 
+disponibile si acesta ramane asemanator (cu mici variatii) indiferent de tipul 
+de schedule ales.
+
+Am realizat si o parsare a parametetrilor pe care ii primeste programul, atat 
+cel serial cat si cel paralel, pentru a ma asigura ca acesta nu cumva primeste 
+fisiere ce nu respecta formatul impus de tema. Detalii despre implementare 
+se gasesc in comentariile din cele doua fisiere sursa: serial.c si paralel.c. 
+
+In mare am folosit 2 seturi de matrici pentru anul anterior si pentru anul
+curent. Dupa terminarea unui ciclu/unei iteratii anul anterior devine anul 
+recent calculat. Pentru retinerea celor 4 valori agregate am creat o array 
+de tip market (o structura creata de mine ce contine cele 4 campuri). Astfel la 
+fiecare iteratie actualizez campurile din elementul cu indexul egal cu iteratia
+la ce se afla programul. 
+
+In final rezultatele sunt afisate in fisierul de iesire.
+
+
+Fisiere arhiva: 
+
+serial.c
+paralel.c 
+Makefile
+rulares.sh // Pentru rularea pe cluster a versiunii seriale
+rularep.sh // Pentru rularea pe cluster a versiunii paralele
+README
+
+Scriptul rulares.sh trebuie sa primeasca aceeasi parametri pe care ar trebui sa 
+ii primeasca executabilul ./serial, fix in aceeasi ordine. 
+
+Scriptul rulare.sh trebuie sa primeasca parametrii in urmatoarea ordine: 
+<nr_threaduri> T fisin fisout. Tipul de schedule se poate modifica doar editand 
+scriptul. In mod default a fost setat la dynamic.
+
+Nu am facut versiunea optimizata.
+
